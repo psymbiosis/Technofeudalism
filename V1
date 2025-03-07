@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technofeudalism - Grid Movement</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+        }
+        canvas {
+            display: block;
+            background-color: #222;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Set canvas size
+        canvas.width = 600;
+        canvas.height = 600;
+
+        // Grid settings
+        const gridSize = 12;
+        const cellWidth = canvas.width / gridSize;
+        const cellHeight = canvas.height / gridSize;
+        let visitedCells = new Set();
+
+        // Stick figure properties
+        let player = {
+            x: Math.floor(gridSize / 2) * cellWidth,
+            y: Math.floor(gridSize / 2) * cellHeight,
+            size: Math.min(cellWidth, cellHeight) * 0.4,
+            speed: cellWidth // Ensure movement aligns with the grid
+        };
+
+        // Key press tracking
+        let keys = {};
+
+        window.addEventListener("keydown", (e) => {
+            keys[e.key] = true;
+            e.preventDefault(); // Prevents scrolling with arrow keys
+        });
+        window.addEventListener("keyup", (e) => {
+            keys[e.key] = false;
+        });
+
+        function update() {
+            // Movement logic (snap to grid, one step at a time)
+            if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
+            if (keys["ArrowDown"] || keys["s"]) player.y += player.speed;
+            if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
+            if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
+
+            // Ensure movement snaps to grid
+            player.x = Math.round(player.x / cellWidth) * cellWidth;
+            player.y = Math.round(player.y / cellHeight) * cellHeight;
+
+            // Keep player inside the grid boundaries
+            player.x = Math.max(0, Math.min(canvas.width - cellWidth, player.x));
+            player.y = Math.max(0, Math.min(canvas.height - cellHeight, player.y));
+
+            // Mark the current tile as visited
+            visitedCells.add(`${player.x},${player.y}`);
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = "gray";
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    let x = i * cellWidth;
+                    let y = j * cellHeight;
+                    
+                    // Check if the tile was visited and change its color
+                    if (visitedCells.has(`${x},${y}`)) {
+                        ctx.fillStyle = "white";
+                        ctx.fillRect(x, y, cellWidth, cellHeight);
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.rect(x, y, cellWidth, cellHeight);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = "black";
+            ctx.lineWidth = 2;
+
+            // Head
+            ctx.beginPath();
+            ctx.arc(player.x + cellWidth / 2, player.y + cellHeight / 4, player.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            ctx.beginPath();
+            ctx.moveTo(player.x + cellWidth / 2, player.y + cellHeight / 4);
+            ctx.lineTo(player.x + cellWidth / 2, player.y + cellHeight / 2);
+            ctx.stroke();
+
+            // Arms
+            ctx.moveTo(player.x + cellWidth / 4, player.y + cellHeight / 3);
+            ctx.lineTo(player.x + cellWidth * 3 / 4, player.y + cellHeight / 3);
+            ctx.stroke();
+
+            // Legs
+            ctx.moveTo(player.x + cellWidth / 2, player.y + cellHeight / 2);
+            ctx.lineTo(player.x + cellWidth / 3, player.y + cellHeight * 3 / 4);
+            ctx.moveTo(player.x + cellWidth / 2, player.y + cellHeight / 2);
+            ctx.lineTo(player.x + cellWidth * 2 / 3, player.y + cellHeight * 3 / 4);
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+            drawGrid();
+            update();
+            drawPlayer();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
